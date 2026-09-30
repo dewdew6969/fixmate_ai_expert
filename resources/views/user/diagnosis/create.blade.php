@@ -4,69 +4,125 @@
 <style>
     .upload-area {
         border: 2px dashed var(--border-color);
-        padding: 2rem;
-        border-radius: 0.5rem;
+        padding: 3rem 2rem;
+        border-radius: 8px;
         text-align: center;
-        background: rgba(0,0,0,0.2);
+        background: rgba(6, 16, 30, 0.4);
         transition: var(--transition);
         position: relative;
+        cursor: pointer;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
     }
     .upload-area:hover {
         border-color: var(--primary);
-        background: rgba(59, 130, 246, 0.05);
+        background: rgba(37, 99, 235, 0.05);
     }
     .upload-tabs {
         display: flex;
-        gap: 1rem;
-        margin-bottom: 1rem;
+        gap: 0.5rem;
+        margin-bottom: 1.5rem;
+        background: rgba(0,0,0,0.2);
+        padding: 0.5rem;
+        border-radius: 8px;
     }
     .tab-btn {
         flex: 1;
-        padding: 0.75rem;
-        background: var(--bg-input);
-        border: 1px solid var(--border-color);
-        color: var(--text-main);
-        border-radius: 0.5rem;
+        padding: 0.875rem;
+        background: transparent;
+        border: 1px solid transparent;
+        color: var(--text-muted);
+        border-radius: 6px;
         cursor: pointer;
         transition: var(--transition);
         font-weight: 500;
+        font-size: 0.95rem;
+    }
+    .tab-btn:hover {
+        color: var(--text-main);
     }
     .tab-btn.active {
         background: var(--primary);
-        border-color: var(--primary);
+        color: #fff;
+        box-shadow: 0 4px 12px rgba(37, 99, 235, 0.2);
     }
     #camera-container {
         display: none;
-        flex-direction: column;
-        align-items: center;
-        gap: 1rem;
     }
     #video-preview {
         width: 100%;
-        max-width: 400px;
-        border-radius: 0.5rem;
+        max-width: 100%;
+        border-radius: 8px;
         background: #000;
+        box-shadow: 0 10px 30px rgba(0,0,0,0.5);
     }
     #photo-preview {
         width: 100%;
-        max-width: 400px;
-        border-radius: 0.5rem;
+        max-width: 100%;
+        border-radius: 8px;
         display: none;
+        box-shadow: 0 10px 30px rgba(0,0,0,0.5);
+    }
+    /* Hide default file input but keep it functional */
+    .custom-file-input {
+        position: absolute;
+        width: 100%;
+        height: 100%;
+        top: 0;
+        left: 0;
+        opacity: 0;
+        cursor: pointer;
+    }
+    .form-group {
+        display: flex;
+        flex-direction: column;
+        margin-bottom: 2rem;
+    }
+    .form-control {
+        width: 100%;
+        padding: 1rem 1.25rem;
+        background: rgba(6, 16, 30, 0.6);
+        border: 1px solid var(--border-color);
+        border-radius: 8px;
+        color: var(--text-main);
+        font-size: 1rem;
+        transition: var(--transition);
+        display: block;
+        box-sizing: border-box;
+    }
+    .form-control:focus {
+        border-color: var(--primary);
+        background: rgba(6, 16, 30, 0.9);
+        outline: none;
+    }
+    select.form-control {
+        cursor: pointer;
+    }
+    textarea.form-control {
+        resize: vertical;
+        min-height: 100px;
     }
 </style>
 @endsection
 
 @section('content')
-<div class="container mt-4 mb-5">
-    <div class="glass-card" style="max-width: 800px; margin: 0 auto;">
-        <h2 class="mb-2">Mulai Diagnosis Baru</h2>
-        <p class="mb-4">Upload foto kerusakan perangkat Anda atau gunakan kamera langsung untuk membantu Expert System kami menganalisis masalah.</p>
+<div class="container mt-5 mb-5">
+    <div class="glass-card" style="max-width: 750px; margin: 0 auto; padding: 3rem;">
+        <div style="text-align: center; margin-bottom: 3rem;">
+            <div style="display: inline-flex; align-items: center; justify-content: center; width: 60px; height: 60px; border-radius: 50%; background: rgba(37, 99, 235, 0.1); color: var(--primary); font-size: 1.5rem; margin-bottom: 1rem;">
+                <i class="fa-solid fa-microchip"></i>
+            </div>
+            <h2 style="font-size: 2rem; margin-bottom: 0.5rem;">Mulai Diagnosis AI</h2>
+            <p style="color: var(--text-muted); font-size: 1.05rem;">Sistem pakar kami membutuhkan data awal perangkat Anda.</p>
+        </div>
 
         @if($errors->any())
-            <div style="background: rgba(239, 68, 68, 0.2); border: 1px solid var(--danger); padding: 1rem; border-radius: 0.5rem; margin-bottom: 1.5rem; color: #fff;">
+            <div style="background: rgba(239, 68, 68, 0.1); border: 1px solid var(--danger); padding: 1rem 1.5rem; border-radius: 8px; margin-bottom: 2rem; color: #fff;">
                 <ul style="list-style-type: none; margin: 0; padding: 0;">
                     @foreach($errors->all() as $error)
-                        <li>{{ $error }}</li>
+                        <li style="margin-bottom: 0.25rem;"><i class="fa-solid fa-circle-exclamation" style="margin-right: 0.5rem; color: var(--danger);"></i> {{ $error }}</li>
                     @endforeach
                 </ul>
             </div>
@@ -75,26 +131,26 @@
         <form action="{{ route('user.diagnosis.store') }}" method="POST" enctype="multipart/form-data" id="diagnosis-form">
             @csrf
             
-            <div class="form-group mb-4">
-                <label class="form-label" for="device_id">Kategori & Perangkat</label>
-                <select name="device_id" id="device_id" class="form-control" required style="appearance: none; background-color: var(--bg-input);">
-                    <option value="" disabled selected>Pilih Perangkat yang Rusak...</option>
+            <div class="form-group">
+                <label class="form-label" for="device_id" style="font-weight: 600; margin-bottom: 0.75rem;">1. Pilih Perangkat yang Rusak</label>
+                <select name="device_id" id="device_id" class="form-control" required>
+                    <option value="" disabled selected>-- Klik untuk memilih perangkat --</option>
                     @foreach($categories as $category)
-                        <optgroup label="{{ $category->name }}">
+                        <optgroup label="{{ $category->name }}" style="background: var(--bg-dark); color: var(--primary);">
                             @foreach($category->devices as $device)
-                                <option value="{{ $device->id }}">{{ $device->name }} {{ $device->brand ? '('.$device->brand.')' : '' }}</option>
+                                <option value="{{ $device->id }}" style="color: var(--text-main);">{{ $device->name }} {{ $device->brand ? '('.$device->brand.')' : '' }}</option>
                             @endforeach
                         </optgroup>
                     @endforeach
                 </select>
             </div>
 
-            <div class="form-group mb-4">
-                <label class="form-label">Foto Kerusakan Utama</label>
+            <div class="form-group">
+                <label class="form-label" style="font-weight: 600; margin-bottom: 0.75rem;">2. Bukti Visual Kerusakan (Foto)</label>
                 
                 <div class="upload-tabs">
                     <button type="button" class="tab-btn active" id="tab-upload" onclick="switchTab('upload')">
-                        <i class="fa-solid fa-file-arrow-up"></i> Upload File
+                        <i class="fa-solid fa-file-image"></i> Unggah File
                     </button>
                     <button type="button" class="tab-btn" id="tab-camera" onclick="switchTab('camera')">
                         <i class="fa-solid fa-camera"></i> Gunakan Kamera
@@ -103,25 +159,32 @@
 
                 <!-- Mode Upload File -->
                 <div class="upload-area" id="upload-container">
-                    <i class="fa-solid fa-cloud-arrow-up" style="font-size: 2.5rem; color: var(--primary); margin-bottom: 1rem;"></i>
-                    <p style="margin-bottom: 1rem;">Tarik foto ke sini atau klik untuk memilih file</p>
-                    <input type="file" id="file_input" name="damage_photo" accept="image/jpeg,image/png,image/jpg,image/webp" style="width: 100%; max-width: 300px; margin: 0 auto; display: block;" required onchange="previewUpload(this)">
-                    <img id="upload-preview" style="display: none; width: 100%; max-width: 300px; margin: 1rem auto 0; border-radius: 8px;">
-                    <small class="text-muted mt-2 d-flex justify-center">Maksimal 5MB. Format: JPG, PNG, WEBP</small>
+                    <input type="file" id="file_input" name="damage_photo" accept="image/jpeg,image/png,image/jpg,image/webp" class="custom-file-input" required onchange="previewUpload(this)">
+                    
+                    <div id="upload-placeholder">
+                        <i class="fa-solid fa-cloud-arrow-up" style="font-size: 3.5rem; color: var(--primary); margin-bottom: 1.5rem; opacity: 0.8;"></i>
+                        <h3 style="font-size: 1.25rem; margin-bottom: 0.5rem; color: var(--text-main);">Tarik & Lepas foto ke sini</h3>
+                        <p style="color: var(--text-muted); margin-bottom: 0;">Atau klik untuk menelusuri file (Maks 5MB)</p>
+                        <span class="btn btn-outline mt-3" style="pointer-events: none; padding: 0.5rem 1rem; font-size: 0.85rem;">Pilih File Foto</span>
+                    </div>
+                    
+                    <img id="upload-preview" style="display: none; width: 100%; max-width: 400px; border-radius: 8px; box-shadow: 0 10px 30px rgba(0,0,0,0.5); z-index: 2; position: relative;">
                 </div>
 
                 <!-- Mode Kamera -->
-                <div class="upload-area" id="camera-container">
+                <div class="upload-area" id="camera-container" style="padding: 1.5rem;">
                     <video id="video-preview" autoplay playsinline></video>
                     <img id="photo-preview" alt="Hasil Foto">
                     <canvas id="canvas" style="display: none;"></canvas>
                     
-                    <div class="d-flex justify-center gap-2 mt-2">
-                        <button type="button" id="btn-start" class="btn btn-primary" onclick="startCamera()">Mulai Kamera</button>
-                        <button type="button" id="btn-capture" class="btn btn-success" style="display: none;" onclick="takePhoto()">
-                            <i class="fa-solid fa-camera"></i> Jepret Foto
+                    <div class="d-flex justify-center gap-2 mt-4" style="width: 100%;">
+                        <button type="button" id="btn-start" class="btn btn-primary" onclick="startCamera()" style="width: 100%;">
+                            <i class="fa-solid fa-video"></i> Aktifkan Kamera
                         </button>
-                        <button type="button" id="btn-retake" class="btn btn-outline" style="display: none;" onclick="retakePhoto()">
+                        <button type="button" id="btn-capture" class="btn btn-success" style="display: none; width: 100%; background: var(--success); color: white;" onclick="takePhoto()">
+                            <i class="fa-solid fa-camera-retro"></i> Jepret Foto
+                        </button>
+                        <button type="button" id="btn-retake" class="btn btn-outline" style="display: none; width: 100%;" onclick="retakePhoto()">
                             <i class="fa-solid fa-rotate-right"></i> Ulangi
                         </button>
                     </div>
@@ -131,14 +194,18 @@
                 </div>
             </div>
 
-            <div class="form-group mb-4">
-                <label class="form-label" for="additional_description">Deskripsi Singkat (Opsional)</label>
-                <textarea name="additional_description" id="additional_description" class="form-control" rows="3" placeholder="Ceritakan sedikit tentang kerusakannya (Kapan terjadinya, apakah ada suara/bau tertentu)..."></textarea>
+            <div class="form-group">
+                <label class="form-label" for="additional_description" style="font-weight: 600; margin-bottom: 0.75rem;">3. Catatan Tambahan (Opsional)</label>
+                <textarea name="additional_description" id="additional_description" class="form-control" placeholder="Contoh: AC meneteskan air sejak 2 hari yang lalu, dan ada suara bising saat dinyalakan..."></textarea>
             </div>
 
-            <div class="d-flex justify-between align-center mt-5">
-                <a href="{{ route('user.dashboard') }}" class="btn btn-outline">Batal</a>
-                <button type="submit" class="btn btn-primary" id="submit-btn">Mulai Analisis <i class="fa-solid fa-arrow-right" style="margin-left: 0.5rem;"></i></button>
+            <hr style="border: 0; height: 1px; background: var(--border-color); margin: 3rem 0;">
+
+            <div class="d-flex justify-between align-center" style="gap: 1rem; flex-wrap: wrap;">
+                <a href="{{ route('user.dashboard') }}" class="btn btn-outline" style="min-width: 120px;">Batal</a>
+                <button type="submit" class="btn btn-primary" id="submit-btn" style="flex: 1; padding: 1.25rem;">
+                    Kirim & Mulai Analisis AI <i class="fa-solid fa-arrow-right" style="margin-left: 0.5rem;"></i>
+                </button>
             </div>
         </form>
     </div>
@@ -159,15 +226,13 @@
         document.getElementById('tab-' + mode).classList.add('active');
         
         // Update Containers
-        document.getElementById('upload-container').style.display = mode === 'upload' ? 'block' : 'none';
+        document.getElementById('upload-container').style.display = mode === 'upload' ? 'flex' : 'none';
         document.getElementById('camera-container').style.display = mode === 'camera' ? 'flex' : 'none';
         
-        // Handle Required Attributes & Camera Lifecycle
         const fileInput = document.getElementById('file_input');
         
         if (mode === 'camera') {
             fileInput.removeAttribute('required');
-            // Suggest to start camera automatically if not already running
             if(!currentStream && document.getElementById('photo-preview').style.display !== 'block') {
                 startCamera();
             }
@@ -179,27 +244,24 @@
         }
     }
 
-    // --- File Upload Preview ---
     function previewUpload(input) {
         if (input.files && input.files[0]) {
             const reader = new FileReader();
             reader.onload = function(e) {
+                document.getElementById('upload-placeholder').style.display = 'none';
                 const img = document.getElementById('upload-preview');
                 img.src = e.target.result;
                 img.style.display = 'block';
-                
-                // Clear camera data just in case
                 document.getElementById('camera_image_base64').value = '';
             }
             reader.readAsDataURL(input.files[0]);
         }
     }
 
-    // --- Camera Functions ---
     async function startCamera() {
         try {
             const stream = await navigator.mediaDevices.getUserMedia({ 
-                video: { facingMode: 'environment' } // Prefer back camera on mobile
+                video: { facingMode: 'environment' }
             });
             
             currentStream = stream;
@@ -209,16 +271,15 @@
             
             document.getElementById('photo-preview').style.display = 'none';
             document.getElementById('btn-start').style.display = 'none';
-            document.getElementById('btn-capture').style.display = 'inline-block';
+            document.getElementById('btn-capture').style.display = 'block';
             document.getElementById('btn-retake').style.display = 'none';
             
-            // Clear existing photo data
             document.getElementById('camera_image_base64').value = '';
             document.getElementById('file_input').removeAttribute('required');
             
         } catch (err) {
             console.error("Error accessing camera: ", err);
-            alert("Tidak dapat mengakses kamera. Pastikan Anda telah memberikan izin akses kamera.");
+            alert("Tidak dapat mengakses kamera. Pastikan browser Anda mengizinkan akses kamera.");
         }
     }
 
@@ -229,28 +290,22 @@
         const canvas = document.getElementById('canvas');
         const photo = document.getElementById('photo-preview');
         
-        // Set canvas dimensions to match video
         canvas.width = video.videoWidth;
         canvas.height = video.videoHeight;
         
-        // Draw video frame to canvas
         const context = canvas.getContext('2d');
         context.drawImage(video, 0, 0, canvas.width, canvas.height);
         
-        // Get image data as base64 (JPEG, quality 0.8)
         const dataUrl = canvas.toDataURL('image/jpeg', 0.8);
         
-        // Show photo preview
         photo.src = dataUrl;
         photo.style.display = 'block';
         video.style.display = 'none';
         
-        // Save to hidden input
         document.getElementById('camera_image_base64').value = dataUrl;
         
-        // Update Buttons
         document.getElementById('btn-capture').style.display = 'none';
-        document.getElementById('btn-retake').style.display = 'inline-block';
+        document.getElementById('btn-retake').style.display = 'block';
         
         stopCamera();
     }
@@ -266,7 +321,6 @@
         }
     }
 
-    // Clean up camera when navigating away
     window.addEventListener('beforeunload', stopCamera);
 </script>
 @endsection
