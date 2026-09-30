@@ -17,7 +17,17 @@
 <body>
     <nav class="navbar">
         <div class="container">
-            <a href="{{ url('/') }}" class="logo">
+            @auth
+                @if(Auth::user()->role === 'admin')
+                    <a href="{{ route('admin.dashboard') }}" class="logo">
+                @elseif(Auth::user()->role === 'technician')
+                    <a href="{{ route('technician.dashboard') }}" class="logo">
+                @else
+                    <a href="{{ route('user.dashboard') }}" class="logo">
+                @endif
+            @else
+                <a href="{{ url('/') }}" class="logo">
+            @endauth
                 <i class="fa-solid fa-wrench"></i> FIX<span>MATE</span>
             </a>
             
@@ -26,16 +36,13 @@
                     <a href="{{ route('login') }}" class="btn btn-outline">Masuk</a>
                     <a href="{{ route('register') }}" class="btn btn-primary">Daftar</a>
                 @else
-                    @if(Auth::user()->role === 'admin')
-                        <a href="{{ route('admin.dashboard') }}">Dashboard Admin</a>
-                    @elseif(Auth::user()->role === 'technician')
-                        <a href="{{ route('technician.dashboard') }}">Dashboard Teknisi</a>
-                    @else
-                        <a href="{{ route('user.dashboard') }}">Dashboard</a>
-                    @endif
+                    <span style="color: var(--text-main); font-weight: 500; margin-right: 1rem; display: inline-flex; align-items: center; gap: 0.5rem;">
+                        <i class="fa-solid fa-circle-user" style="font-size: 1.25rem; color: var(--primary);"></i>
+                        Halo, {{ explode(' ', Auth::user()->name)[0] }}
+                    </span>
                     
-                    <a href="#" onclick="event.preventDefault(); document.getElementById('logout-form').submit();" class="btn btn-outline">
-                        Keluar
+                    <a href="#" onclick="event.preventDefault(); document.getElementById('logout-form').submit();" class="btn btn-outline" style="border-color: var(--danger); color: var(--danger);">
+                        <i class="fa-solid fa-arrow-right-from-bracket"></i> Keluar
                     </a>
                     <form id="logout-form" action="{{ route('logout') }}" method="POST" style="display: none;">
                         @csrf
@@ -107,7 +114,7 @@
             </div>
 
             <div class="footer-bottom">
-                <p>&copy; {{ date('Y') }} <strong>FIXMATE</strong>. Dikembangkan oleh Dewa Permana. Hak Cipta Dilindungi Undang-Undang.</p>
+                <p>&copy; {{ date('Y') }} <strong>FIXMATE</strong>. Dikembangkan oleh Team Developer Ujang Deploy. Hak Cipta Dilindungi Undang-Undang.</p>
                 <p>Build Version 1.0 (Laravel 12 Architecture)</p>
             </div>
         </div>
