@@ -57,27 +57,33 @@ class DiagnosisController extends Controller
         $imagePath = null;
         $folderPath = 'public/consultations/' . date('Y/m');
 
+        $geminiBase64 = null;
+        $mimeType = 'image/jpeg';
+        
         if ($request->hasFile('damage_photo')) {
             // Upload from File Picker
-            $path = $request->file('damage_photo')->store($folderPath);
+            $file = $request->file('damage_photo');
+            $path = $file->store($folderPath);
             $imagePath = str_replace('public/', '', $path);
+            
+            $geminiBase64 = base64_encode(file_get_contents($file->getRealPath()));
+            $mimeType = $file->getMimeType();
         } elseif (!empty($request->camera_image_base64)) {
             // Upload from Web Camera Base64
             $base64Image = $request->camera_image_base64;
+            $geminiBase64 = $base64Image; // raw
             
-            // Format is usually "data:image/jpeg;base64,....."
             if (preg_match('/^data:image\/(\w+);base64,/', $base64Image, $type)) {
-                $base64Image = substr($base64Image, strpos($base64Image, ',') + 1);
-                $type = strtolower($type[1]); // jpg, png, etc
+                $base64Data = substr($base64Image, strpos($base64Image, ',') + 1);
+                $ext = strtolower($type[1]);
+                $mimeType = 'image/' . $ext;
                 
-                if (in_array($type, ['jpg', 'jpeg', 'png', 'webp'])) {
-                    $base64Image = base64_decode($base64Image);
-                    
-                    if ($base64Image !== false) {
-                        $fileName = uniqid() . '.' . $type;
+                if (in_array($ext, ['jpg', 'jpeg', 'png', 'webp'])) {
+                    $decodedImage = base64_decode($base64Data);
+                    if ($decodedImage !== false) {
+                        $fileName = uniqid() . '.' . $ext;
                         $path = $folderPath . '/' . $fileName;
-                        
-                        \Illuminate\Support\Facades\Storage::put($path, $base64Image);
+                        \Illuminate\Support\Facades\Storage::put($path, $decodedImage);
                         $imagePath = str_replace('public/', '', $path);
                     }
                 }
@@ -91,15 +97,26 @@ class DiagnosisController extends Controller
             ]);
         }
 
-        // Note: AI Vision analysis would typically be triggered here via Job/Queue
-        // For now, we proceed to the questions view
+        // TRIGGER GEMINI AI ANALYSIS
+        $gemini = new \App\Services\GeminiDiagnosisService();
+        $deviceName = $consultation->device->name;
+        $description = $validated['additional_description'] ?? '';
+        
+        $aiResult = $gemini->analyze($geminiBase64, $mimeType, $description, $deviceName);
+        
+        // Update Consultation
+        $consultation->update([
+            'status' => 'completed',
+            'result' => $aiResult,
+            'confidence' => 95.00 // Example
+        ]);
         
         return redirect()->route('user.diagnosis.show', $consultation->id)
-            ->with('success', 'Foto berhasil diunggah. Mari kita mulai diagnosis.');
+            ->with('success', 'Analisis AI selesai dilakukan!');
     }
 
     /**
-     * Show the expert system questionnaire.
+     * Show the AI diagnosis result.
      */
     public function show(string $id)
     {
@@ -107,8 +124,6 @@ class DiagnosisController extends Controller
             ->with(['device', 'consultationImages'])
             ->findOrFail($id);
 
-        // This is where ExpertSystemService getNextQuestion would be called
-        // For the scaffolding phase, we'll just display a placeholder view
         return view('user.diagnosis.show', compact('consultation'));
     }
 
